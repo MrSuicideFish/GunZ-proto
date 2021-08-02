@@ -22,10 +22,6 @@ public abstract class CombatState : SM_State<CombatState>
     protected PlayerController _controller;
     protected Guid StateId;
 
-    protected Vector3 InputLookDelta;
-    protected Vector3 InputMoveDelta;
-    protected Vector3 WorldInputMoveDelta;
-
     public CombatState(PlayerController controller)
     {
         _controller = controller;
@@ -34,34 +30,9 @@ public abstract class CombatState : SM_State<CombatState>
 
     #region State Machine Stuff
     public abstract void OnStateEnter(StateMachine<CombatState> sm);
-
     public abstract void OnStateExit(StateMachine<CombatState> sm);
-
-    public virtual void OnStateUpdate(StateMachine<CombatState> sm, float deltaTime)
-    {
-        if (_controller.isLocalPlayer)
-        {
-            InputLookDelta = new Vector3()
-            {
-                x = Input.GetAxis("Mouse Y"),
-                y = Input.GetAxis("Mouse X"),
-                z = 0
-            };
-
-            InputMoveDelta = new Vector3()
-            {
-                x = Input.GetAxis("Horizontal"),
-                y = 0,
-                z = Input.GetAxis("Vertical")
-            };
-
-            WorldInputMoveDelta = _controller.shoulderFollowTarget
-                .TransformDirection(InputMoveDelta);
-        }
-    }
-
+    public abstract void OnStateUpdate(StateMachine<CombatState> sm, float deltaTime);
     public abstract bool CanInterrupt(CombatState? nextState);
-
     public int CompareTo(CombatState other)
     {
         if (other == null) return 1;

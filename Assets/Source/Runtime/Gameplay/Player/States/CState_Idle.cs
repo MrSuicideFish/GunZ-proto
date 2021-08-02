@@ -34,9 +34,9 @@ public class CState_Grounded_Idle : CombatState
         }
 
         idleTime += deltaTime;
-        if(InputMoveDelta != Vector3.zero)
+        if(_controller.InputMoveDelta != Vector3.zero)
         {
-            _controller.SetCombatState(ECombatStateType.Walk);
+            _controller.TryGoToState(ECombatStateType.Walk);
         }
     }
 

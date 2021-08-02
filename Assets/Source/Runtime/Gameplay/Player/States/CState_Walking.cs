@@ -34,5 +34,14 @@ public class CState_Grounded_Walking : CombatState
 
     public override void OnStateUpdate(StateMachine<CombatState> sm, float deltaTime)
     {
+        if(_controller.InputMoveDelta == Vector3.zero)
+        {
+            _controller.TryGoToState(ECombatStateType.Idle);
+        }
+        else
+        {
+            _controller.rigidBody.AddForce(
+                _controller.WorldInputMoveDelta * deltaTime * 10, ForceMode.VelocityChange);
+        }
     }
 }
