@@ -10,8 +10,8 @@ using Mirror;
 [RequireComponent(typeof(Animator))]
 public class PlayerController : NetworkBehaviour
 {
-    private const float MAX_LOOK_Y = 60;
-    private const float MIN_LOOK_Y = -30;
+    private const float MAX_LOOK_Y = 80;
+    private const float MIN_LOOK_Y = -70;
 
     #region Internal Components
     private StateMachine<CombatState> _combatSM;
@@ -34,8 +34,14 @@ public class PlayerController : NetworkBehaviour
     public bool isHeavyAttacking { get; private set; }
     public bool isBlocking { get; private set; }
 
+    public float walkSpeed = 10;
+    public float jumpStrength = 100;
+
     [SyncVar] public HitInfo lastHitInfo;
     #endregion
+
+    private Vector3 _bodyRotation;
+    private Vector3 _lookRotation;
 
     // states
     private Dictionary<CombatState.ECombatStateType, CombatState> _combatStateDict;
@@ -70,12 +76,13 @@ public class PlayerController : NetworkBehaviour
         combatCamera.Toggle(this.isLocalPlayer);
         TryGoToState(CombatState.ECombatStateType.Idle);
 
-        base.OnStartClient();
-    }
+        if (this.isLocalPlayer)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
 
-    public void Jump(Vector2 inputDir)
-    {
-        TryGoToState(CombatState.ECombatStateType.Jump);
+        base.OnStartClient();
     }
 
     [Command]
@@ -111,38 +118,92 @@ public class PlayerController : NetworkBehaviour
     {
         if (this.isLocalPlayer)
         {
-            InputLookDelta = new Vector3()
+            ProcessInput();
+
+            WorldInputMoveDelta = transform.TransformDirection(InputMoveDelta).normalized;
+        }
+
+        _combatSM.StateMachineUpdate(Time.deltaTime);
+    }
+    private void FixedUpdate()
+    {
+        Rotate(InputLookDelta.y);
+        Look(InputLookDelta.x);
+        _combatSM.StateMachineFixedUpdate(Time.deltaTime);
+    }
+
+    private void LateUpdate()
+    {
+        _combatSM.StateMachineLateUpdate(Time.deltaTime);
+    }
+
+    private void OnGUI()
+    {
+        if (this.isLocalPlayer)
+        {
+            if(_combatSM.CurrentState != null)
             {
-                x = Input.GetAxis("Mouse Y"),
-                y = Input.GetAxis("Mouse X"),
-                z = 0
-            };
-
-            InputMoveDelta = new Vector3()
-            {
-                x = Input.GetAxis("Horizontal"),
-                y = 0,
-                z = Input.GetAxis("Vertical")
-            };
-
-            WorldInputMoveDelta = shoulderFollowTarget
-                .TransformDirection(InputMoveDelta);
-
-            isJumping = Input.GetKeyDown(KeyCode.Space);
-            isBlocking = Input.GetKeyDown(KeyCode.LeftControl);
-            isLightAttacking = Input.GetMouseButtonDown(0);
-            isHeavyAttacking = Input.GetMouseButtonDown(1);
-            isGrounded = IsGrounded();
+                GUI.Label(new Rect(0, 0, 200, 200), _combatSM.CurrentState.CombatStateType.ToString());
+            }
         }
     }
 
-    private void FixedUpdate()
+    private void Look(float amount)
     {
-        _combatSM.TickStateMachine(Time.deltaTime);
+        _lookRotation.x = shoulderFollowTarget.localEulerAngles.x + amount;
+        _lookRotation.y = 0;
+        _lookRotation.z = 0;
+
+        //if (_lookRotation.x < MIN_LOOK_Y) _lookRotation.x = MIN_LOOK_Y;
+        //if (_lookRotation.x > MAX_LOOK_Y) _lookRotation.x = MAX_LOOK_Y;
+
+        shoulderFollowTarget.localEulerAngles = Quaternion.Euler(_lookRotation).eulerAngles;
+    }
+
+    
+    private void Rotate(float amount)
+    {
+        _bodyRotation.y += amount;
+        transform.eulerAngles = _bodyRotation;
+    }
+
+    private void ProcessInput()
+    {
+        InputLookDelta = new Vector3()
+        {
+            x = -Input.GetAxis("Mouse Y"),
+            y = Input.GetAxis("Mouse X"),
+            z = 0
+        };
+
+        InputMoveDelta = new Vector3()
+        {
+            x = Input.GetAxis("Horizontal"),
+            y = 0,
+            z = Input.GetAxis("Vertical")
+        }.normalized;
+
+        isJumping = Input.GetKey(KeyCode.Space);
+        isBlocking = Input.GetKey(KeyCode.LeftControl);
+        isLightAttacking = Input.GetMouseButtonDown(0);
+        isHeavyAttacking = Input.GetMouseButtonDown(1);
+        isGrounded = IsGrounded();
     }
 
     private bool IsGrounded()
     {
-        return false;
+        bool grounded = false;
+        Vector3 feetPoint = collider.bounds.center - new Vector3(0, collider.bounds.extents.y, 0);
+        const float collisionRadius = 0.1f;
+        var overlapping = Physics.OverlapSphere(feetPoint, collisionRadius);
+        foreach(Collider col in overlapping)
+        {
+            if(col.gameObject.layer == 0 
+                || col.gameObject.layer == LayerMask.NameToLayer("Walkable"))
+            {
+                grounded = true;
+            }
+        }
+        return grounded;
     }
 }

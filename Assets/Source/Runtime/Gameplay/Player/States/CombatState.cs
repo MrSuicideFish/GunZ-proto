@@ -38,5 +38,8 @@ public abstract class CombatState : SM_State<CombatState>
         if (other == null) return 1;
         return this.StateId.CompareTo(other.StateId);
     }
+
+    public abstract void OnStateLateUpdate(StateMachine<CombatState> sm, float deltaTime);
+    public abstract void OnStateFixedUpdate(StateMachine<CombatState> sm, float deltaTime);
     #endregion
 }

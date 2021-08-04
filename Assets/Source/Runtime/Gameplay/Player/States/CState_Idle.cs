@@ -33,11 +33,32 @@ public class CState_Grounded_Idle : CombatState
             PlayIdleAnim();
         }
 
+        if (_controller.isJumping)
+        {
+            _controller.TryGoToState(ECombatStateType.Jump);
+            return;
+        }
+
         idleTime += deltaTime;
-        if(_controller.InputMoveDelta != Vector3.zero)
+
+        Vector3 vel = Vector3.zero;
+        vel.y = _controller.rigidBody.velocity.y;
+        _controller.rigidBody.velocity = vel;
+
+        if (_controller.InputMoveDelta != Vector3.zero)
         {
             _controller.TryGoToState(ECombatStateType.Walk);
         }
+    }
+
+    public override void OnStateFixedUpdate(StateMachine<CombatState> sm, float deltaTime)
+    {
+
+    }
+
+    public override void OnStateLateUpdate(StateMachine<CombatState> sm, float deltaTime)
+    {
+
     }
 
     private void ResetIdleTime()
