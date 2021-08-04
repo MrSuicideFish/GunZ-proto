@@ -58,9 +58,14 @@ public class CState_Jump : CombatState
             }
             else
             {
-                if (_controller.rigidBody.velocity.y <= 0)
+                if (_controller.rigidBody.velocity.y < 0.0f)
                 {
                     _controller.TryGoToState(ECombatStateType.Fall);
+                }
+                else if(_controller.isJumping && !_controller.hasDoubleJumped)
+                {
+                    _controller.FlagDoubleJump();
+                    _controller.TryGoToState(ECombatStateType.DoubleJump);
                 }
             }
         }

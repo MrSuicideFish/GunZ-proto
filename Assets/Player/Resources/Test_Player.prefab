@@ -450,7 +450,7 @@ MonoBehaviour:
   syncInterval: 0.1
   shoulderFollowTarget: {fileID: 6768929473515221999}
   walkSpeed: 300
-  airSpeed: 250
+  airSpeed: 200
   jumpStrength: 10
   lastHitInfo:
     hitPlayer: 

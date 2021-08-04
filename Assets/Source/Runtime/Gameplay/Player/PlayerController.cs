@@ -34,6 +34,7 @@ public class PlayerController : NetworkBehaviour
     public bool isLightAttacking { get; private set; }
     public bool isHeavyAttacking { get; private set; }
     public bool isBlocking { get; private set; }
+    public bool hasDoubleJumped { get; private set; }
     public float groundedTime { get; private set; }
     public bool groundedTimerExpired
     {
@@ -82,11 +83,15 @@ public class PlayerController : NetworkBehaviour
         var walk_state = new CState_Grounded_Walking(this);
         var jump_state = new CState_Jump(this);
         var fall_state = new CState_Falling(this);
+        var doubleJump_state = new CState_DoubleJump(this);
+        var landing_state = new CState_Landing(this);
 
         _combatStateDict.Add(idle_state.CombatStateType, idle_state);
         _combatStateDict.Add(walk_state.CombatStateType, walk_state);
         _combatStateDict.Add(jump_state.CombatStateType, jump_state);
         _combatStateDict.Add(fall_state.CombatStateType, fall_state);
+        _combatStateDict.Add(doubleJump_state.CombatStateType, doubleJump_state);
+        _combatStateDict.Add(landing_state.CombatStateType, landing_state);
     }
 
     public override void OnStartClient()
@@ -107,6 +112,16 @@ public class PlayerController : NetworkBehaviour
         }
 
         base.OnStartClient();
+    }
+
+    public void FlagDoubleJump()
+    {
+        hasDoubleJumped = true;
+    }
+
+    public void ResetDoubleJump()
+    {
+        hasDoubleJumped = false;
     }
 
     [Command]
@@ -147,6 +162,7 @@ public class PlayerController : NetworkBehaviour
             isGrounded = IsGrounded();
             if (isGrounded)
             {
+                ResetDoubleJump();
                 groundedTime = Mathf.Clamp(groundedTime + Time.deltaTime, 0, MAX_GROUNDED_TIME);
             }
             else
@@ -162,8 +178,12 @@ public class PlayerController : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        Rotate(InputLookDelta.y);
-        Look(InputLookDelta.x);
+        if (this.isLocalPlayer)
+        {
+            Rotate(InputLookDelta.y);
+            Look(InputLookDelta.x);
+        }
+
         _combatSM.StateMachineFixedUpdate(Time.deltaTime);
     }
 
@@ -223,7 +243,7 @@ public class PlayerController : NetworkBehaviour
             z = Input.GetAxis("Vertical")
         }.normalized;
 
-        isJumping = Input.GetKey(KeyCode.Space);
+        isJumping = Input.GetKeyDown(KeyCode.Space);
         isBlocking = Input.GetKey(KeyCode.LeftControl);
         isLightAttacking = Input.GetMouseButtonDown(0);
         isHeavyAttacking = Input.GetMouseButtonDown(1);
