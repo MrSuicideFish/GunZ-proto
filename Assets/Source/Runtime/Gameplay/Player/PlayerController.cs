@@ -35,6 +35,7 @@ public class PlayerController : NetworkBehaviour
     public bool isBlocking { get; private set; }
 
     public float walkSpeed = 10;
+    public float airSpeed = 10;
     public float jumpStrength = 100;
 
     [SyncVar] public HitInfo lastHitInfo;
@@ -59,10 +60,12 @@ public class PlayerController : NetworkBehaviour
         var idle_state = new CState_Grounded_Idle(this);
         var walk_state = new CState_Grounded_Walking(this);
         var jump_state = new CState_Jump(this);
+        var fall_state = new CState_Falling(this);
 
         _combatStateDict.Add(idle_state.CombatStateType, idle_state);
         _combatStateDict.Add(walk_state.CombatStateType, walk_state);
         _combatStateDict.Add(jump_state.CombatStateType, jump_state);
+        _combatStateDict.Add(fall_state.CombatStateType, fall_state);
     }
 
     public override void OnStartClient()

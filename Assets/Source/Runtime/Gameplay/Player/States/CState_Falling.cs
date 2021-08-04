@@ -1,12 +1,12 @@
 ﻿using UnityEngine;
 
-public class CState_Jump : CombatState
+public class CState_Falling : CombatState
 {
-    private const string anim_jump_start = "Jump_Start";
+    private const string anim_jump_loop = "Jump_Loop";
 
-    public CState_Jump(PlayerController controller) : base(controller)
+    public CState_Falling(PlayerController controller) : base(controller)
     {
-        CombatStateType = ECombatStateType.Jump;
+        CombatStateType = ECombatStateType.Fall;
     }
 
     public override bool CanInterrupt(CombatState nextState)
@@ -16,8 +16,7 @@ public class CState_Jump : CombatState
 
     public override void OnStateEnter(StateMachine<CombatState> sm)
     {
-        _controller.rigidBody.AddForce(Vector3.up * _controller.jumpStrength, ForceMode.Force);
-        _controller.animator.Play(anim_jump_start);
+        _controller.animator.Play(anim_jump_loop);
     }
 
     public override void OnStateExit(StateMachine<CombatState> sm)
@@ -29,13 +28,6 @@ public class CState_Jump : CombatState
         if (_controller.isGrounded)
         {
             _controller.TryGoToState(ECombatStateType.Walk);
-        }
-        else
-        {
-            if(_controller.rigidBody.velocity.y <= 0)
-            {
-                _controller.TryGoToState(ECombatStateType.Fall);
-            }
         }
     }
 

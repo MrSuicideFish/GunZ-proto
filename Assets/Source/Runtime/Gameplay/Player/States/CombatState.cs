@@ -11,6 +11,7 @@ public abstract class CombatState : SM_State<CombatState>
         Walk,
         Dash,
         Jump,
+        Fall,
         LightAttack,
         HeavyAttack,
         Hit_Heavy,
