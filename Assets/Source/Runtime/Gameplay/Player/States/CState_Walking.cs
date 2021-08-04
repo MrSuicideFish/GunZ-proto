@@ -82,6 +82,12 @@ public class CState_Grounded_Walking : CombatState
 
     public override void OnStateFixedUpdate(StateMachine<CombatState> sm, float deltaTime)
     {
+        if (!_controller.isGrounded)
+        {
+            _controller.TryGoToState(ECombatStateType.Fall);
+            return;
+        }
+
         // do move
         Vector3 delta = _controller.WorldInputMoveDelta;
         Vector3 vel = delta * _controller.walkSpeed * deltaTime;
@@ -96,7 +102,7 @@ public class CState_Grounded_Walking : CombatState
 
     public override void OnStateUpdate(StateMachine<CombatState> sm, float deltaTime)
     {
-        if (_controller.isJumping)
+        if (_controller.isJumping  && _controller.groundedTimerExpired)
         {
             _controller.TryGoToState(ECombatStateType.Jump);
             return;
@@ -108,7 +114,6 @@ public class CState_Grounded_Walking : CombatState
             return;
         }
 
-        Debug.Log(_controller.InputMoveDelta);
         DoWalkAnim(deltaTime);
     }
 }

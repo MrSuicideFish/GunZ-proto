@@ -12,6 +12,7 @@ public class PlayerController : NetworkBehaviour
 {
     private const float MAX_LOOK_Y = 80;
     private const float MIN_LOOK_Y = -70;
+    private const float MAX_GROUNDED_TIME = 0.10f;
 
     #region Internal Components
     private StateMachine<CombatState> _combatSM;
@@ -33,6 +34,26 @@ public class PlayerController : NetworkBehaviour
     public bool isLightAttacking { get; private set; }
     public bool isHeavyAttacking { get; private set; }
     public bool isBlocking { get; private set; }
+    public float groundedTime { get; private set; }
+    public bool groundedTimerExpired
+    {
+        get
+        {
+            return groundedTime >= MAX_GROUNDED_TIME;
+        }
+    }
+
+    private float _playerHeight = -1.0f;
+    public float playerHeight {
+        get
+        {
+            if(_playerHeight <= 0.0)
+            {
+                _playerHeight = collider.height;
+            }
+            return _playerHeight;
+        } 
+    }
 
     public float walkSpeed = 10;
     public float airSpeed = 10;
@@ -123,11 +144,22 @@ public class PlayerController : NetworkBehaviour
         {
             ProcessInput();
 
+            isGrounded = IsGrounded();
+            if (isGrounded)
+            {
+                groundedTime = Mathf.Clamp(groundedTime + Time.deltaTime, 0, MAX_GROUNDED_TIME);
+            }
+            else
+            {
+                groundedTime = 0.0f;
+            }
+
             WorldInputMoveDelta = transform.TransformDirection(InputMoveDelta).normalized;
         }
 
         _combatSM.StateMachineUpdate(Time.deltaTime);
     }
+
     private void FixedUpdate()
     {
         Rotate(InputLookDelta.y);
@@ -151,6 +183,12 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
+    private void OnDrawGizmos()
+    {
+        Vector3 feetPoint = collider.bounds.center - new Vector3(0, collider.bounds.extents.y, 0);
+        Gizmos.DrawWireSphere(feetPoint, 0.3f);
+    }
+
     private void Look(float amount)
     {
         _lookRotation.x = shoulderFollowTarget.localEulerAngles.x + amount;
@@ -163,7 +201,6 @@ public class PlayerController : NetworkBehaviour
         shoulderFollowTarget.localEulerAngles = Quaternion.Euler(_lookRotation).eulerAngles;
     }
 
-    
     private void Rotate(float amount)
     {
         _bodyRotation.y += amount;
@@ -190,14 +227,13 @@ public class PlayerController : NetworkBehaviour
         isBlocking = Input.GetKey(KeyCode.LeftControl);
         isLightAttacking = Input.GetMouseButtonDown(0);
         isHeavyAttacking = Input.GetMouseButtonDown(1);
-        isGrounded = IsGrounded();
     }
 
     private bool IsGrounded()
     {
         bool grounded = false;
         Vector3 feetPoint = collider.bounds.center - new Vector3(0, collider.bounds.extents.y, 0);
-        const float collisionRadius = 0.1f;
+        const float collisionRadius = 0.2f;
         var overlapping = Physics.OverlapSphere(feetPoint, collisionRadius);
         foreach(Collider col in overlapping)
         {

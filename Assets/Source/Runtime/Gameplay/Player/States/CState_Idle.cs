@@ -33,9 +33,15 @@ public class CState_Grounded_Idle : CombatState
             PlayIdleAnim();
         }
 
-        if (_controller.isJumping)
+        if (_controller.isJumping && _controller.groundedTimerExpired)
         {
             _controller.TryGoToState(ECombatStateType.Jump);
+            return;
+        }
+
+        if (!_controller.isGrounded)
+        {
+            _controller.TryGoToState(ECombatStateType.Fall);
             return;
         }
 
